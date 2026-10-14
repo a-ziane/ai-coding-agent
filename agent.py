@@ -1,11 +1,11 @@
 import ollama
-from tools import read_file, list_files, write_file, edit_file
+from tools import read_file, list_files, write_file, edit_file, run_python
 
 print("AI Coding Agent")
 
 user_input = input("User: ")
 messages = []
-tools = [read_file, list_files, write_file, edit_file]
+tools = [read_file, list_files, write_file, edit_file,run_python]
 tool_map = {
     tool.__name__: tool
     for tool in tools
@@ -26,7 +26,8 @@ while user_input != '':
     response = ollama.chat(
         model="qwen3:14b",
         messages= messages,
-        tools=tools
+        tools=tools,
+        think=False
     )
     ##############################
     tool_calls = response["message"].get("tool_calls") or []
@@ -46,8 +47,10 @@ while user_input != '':
         response = ollama.chat(
             model="qwen3:14b",
             messages=messages,
-            tools=tools
+            tools=tools,
+            think=False
         )
+        print("DEBUG RESPONSE:", response["message"])
         tool_calls = response["message"].get("tool_calls") or []
 
     ##############################

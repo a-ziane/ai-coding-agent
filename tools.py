@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 
 def read_file(path):
@@ -50,4 +51,18 @@ def edit_file(path, old_text , new_text):
         else:
             return "Error: old text was not found in the file."
 
+def run_python(path):
+    """Run a Python file and return its output and errors.
+
+    Args:
+        path: Path to the Python file to execute.
+    """
+    result = subprocess.run(
+        ["python3", path],
+        capture_output=True,
+        text=True,
+        timeout=10
+    )
+
+    return result.stdout + result.stderr
 
