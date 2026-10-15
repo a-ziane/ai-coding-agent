@@ -1,5 +1,7 @@
-print("Starting program")
+def calculate_average(numbers):
+    total = sum(numbers)
+    return total / len(numbers)
 
-x = 10 / 2
 
-print("Finished")
+values = [10, 20, 30]
+print(calculate_average(values))

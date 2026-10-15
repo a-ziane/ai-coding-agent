@@ -1,5 +1,7 @@
 import os
 import subprocess
+import shlex
+from pathlib import Path
 
 
 def read_file(path):
@@ -9,7 +11,7 @@ def read_file(path):
     """
     with open(path,"r") as infile:
         return infile.read()
-
+#####################################################################
 def list_files(path):
     """Return a list of all files in a given directory.
     Args:
@@ -23,7 +25,7 @@ def list_files(path):
             filtered.append(file)
 
     return filtered
-
+#####################################################################
 def write_file(path, content):
     """Create or overwrite a file with the provided content.
     Args:
@@ -33,7 +35,7 @@ def write_file(path, content):
     with open(path, "w") as outfile:
         outfile.write(content)
     return f"Successfully wrote to {path}"
-
+#####################################################################
 def edit_file(path, old_text , new_text):
     """Edit existing code in a file
     Args:
@@ -50,7 +52,7 @@ def edit_file(path, old_text , new_text):
             return f"Successfully edited to {path}"
         else:
             return "Error: old text was not found in the file."
-
+#####################################################################
 def run_python(path):
     """Run a Python file and return its output and errors.
 
@@ -63,6 +65,93 @@ def run_python(path):
         text=True,
         timeout=10
     )
+    stdout = result.stdout.strip()
+    stderr = result.stderr.strip()
 
-    return result.stdout + result.stderr
+    return (
+        f"Exit code:{result.returncode}\n"
+        f"STDOUT:\n {stdout if stdout else '(empty)'}\n"
+        f"STDERR:\n {stderr if stderr else '(empty)'}\n"
+    )
+#####################################################################
+PROJECT_ROOT = Path(__file__).resolve().parent
 
+ALLOWED_COMMANDS = {
+    "python3",
+    "pytest",
+    "node",
+    "npm"
+}
+
+def run_command(command: str) -> str:
+    """
+    Run an approved development command inside the project directory
+    Use this tool for JavaScript files, Python tests, npm scripts.
+
+    Allowed command names:
+    -python3
+    -pytest
+    -node
+    -npm
+
+    Examples:
+    -node test.js
+    -pytest
+    -pytest tests/test_tools.py
+    -npm test
+    python3 example.py
+
+    Args: 
+        command: the complete command to run.
+    Returns:
+        the command, working directory, exit code, stdout, and stderr
+
+    """
+    try:
+        arguments = shlex.split(command)
+    except ValueError as error:
+        return f"Error: Invalid command syntax: {error}"
+
+    if not arguments:
+        return "Error: No command was provided"
+    
+    executable = arguments[0]
+
+    if executable not in ALLOWED_COMMANDS:
+        allowed = ", ".join(sorted(ALLOWED_COMMANDS))
+        return(
+            f"Error: Command '{executable}' is not allowed. \n"
+            f"Allowed commands: {allowed}"
+        )
+    try:
+        result = subprocess.run(
+            arguments,
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            shell=False
+        )
+
+        stdout = result.stdout.strip() or "(empty)"
+        stderr = result.stderr.strip() or "(empty)"
+
+        return(
+            f"Command: {command}\n"
+            f"Working directory: {PROJECT_ROOT}\n"
+            f"Exit code: {result.returncode}\n"
+            f"STDOUT:\n{stdout}\n"
+            f"STDERR:\n{stderr}\n"
+        )
+    except subprocess.TimeoutExpired:
+        return(
+            f"Command: {command}\n"
+            "Error: Command timed out after 30 seconds."
+        )
+    except FileNotFoundError:
+        return(
+            f"Error: '{executable}' is allowed but is not installed"
+            "or could not be found."
+        )
+    except Exception as error:
+        return f"Error while running command: {error}"
